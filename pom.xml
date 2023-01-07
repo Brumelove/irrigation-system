@@ -15,14 +15,38 @@
     <description>irrigation-system</description>
 
     <properties>
-        <java.version>16</java.version>
         <openapi.version>1.6.14</openapi.version>
         <lombok.version>1.18.22</lombok.version>
+        <spring.boot.maven.plugin.version>2.5.7</spring.boot.maven.plugin.version>
+        <spring.boot.dependencies.version>2.5.7</spring.boot.dependencies.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <spring.cloud-version>2020.0.3</spring.cloud-version>
+        <maven.compiler.target>17</maven.compiler.target>
         <resilience-4j.version>1.7.0</resilience-4j.version>
         <spring.actuator.version>2.4.1</spring.actuator.version>
         <maven.compiler.version>3.8.1</maven.compiler.version>
         <mapstruct.version>1.4.2.Final</mapstruct.version>
     </properties>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.dependencies.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.cloud-version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -92,17 +116,33 @@
             <artifactId>spring-boot-starter-aop</artifactId>
             <version>${spring.actuator.version}</version>
         </dependency>
+
+        <!--    open feign-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
     </dependencies>
 
+
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.maven.plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.version}</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                     <fork>true</fork>
                     <annotationProcessorPaths>
                         <path>

@@ -16,7 +16,6 @@ import java.util.List;
  **/
 @Mapper(componentModel = "spring")
 public interface IrrigationMapper {
-
     static IrrigationMapper getIrrigationMapper() {
         return Mappers.getMapper(IrrigationMapper.class);
     }

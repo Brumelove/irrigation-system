@@ -23,7 +23,7 @@ public class MQConfig {
 
     @Bean
     public Queue smsQueue() {
-        return new Queue(config.getSmsQueue());
+        return new Queue(config.getEmailQueue());
     }
 
     @Bean
@@ -36,7 +36,7 @@ public class MQConfig {
         return BindingBuilder
                 .bind(smsQueue())
                 .to(exchange())
-                .with(config.getSmsKey());
+                .with(config.getEmailKey());
     }
 
     @Bean

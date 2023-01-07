@@ -2,6 +2,7 @@ package com.andela.irrigationsystem.service;
 
 import com.andela.irrigationsystem.dto.PlotDto;
 import com.andela.irrigationsystem.dto.TimeSlotsDto;
+import com.andela.irrigationsystem.enumerations.StatusType;
 import com.andela.irrigationsystem.exception.ElementNotFoundException;
 import com.andela.irrigationsystem.mapper.IrrigationMapper;
 import com.andela.irrigationsystem.model.Plot;
@@ -20,6 +21,7 @@ import java.util.Set;
 public class PlotService {
     public final IrrigationMapper mapper;
     public final TimeSlotsService timeSlotsService;
+    public final SensorService sensorService;
     private final PlotRepository repository;
 
     public PlotDto addPlot(PlotDto plotDto) {
@@ -46,6 +48,13 @@ public class PlotService {
         return mapper.mapPlotEntityListToDtoList(plots);
     }
 
+    /**
+     * Method to add timeslots for a particular plot of land
+     *
+     * @param plotId
+     * @param timeSlots
+     * @return TimeSlots
+     */
     public TimeSlotsDto configurePlotOfLand(Long plotId, TimeSlotsDto timeSlots) {
         var plot = getById(plotId);
         if (plot != null) {
@@ -57,4 +66,14 @@ public class PlotService {
             return mapper.mapTimeSlotsEntityToDto(timeSlotsService.save(entity));
         } else throw new ElementNotFoundException("plot id does not exist");
     }
+
+    private void triggerSensor(Long plotId, TimeSlotsDto timeSlots) {
+        var response = sensorService.triggerSensor(plotId, timeSlots);
+        if (response) {
+            timeSlots.setStatus(StatusType.SUCCESS);
+        } else timeSlots.setStatus(StatusType.UNSUCCESSFUL);
+
+        timeSlotsService.save(mapper.mapTimeSlotsDtoToEntity(timeSlots));
+    }
+
 }
