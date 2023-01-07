@@ -1,0 +1,51 @@
+server:
+  port: 8092
+  servlet:
+    context-path: /irrigation-system
+
+spring:
+  datasource:
+    url: jdbc:h2:~/recruitment
+    username: sa
+    password:
+    hikari:
+      maximum-pool-size: 2
+    driver-class-name: org.h2.Driver
+  jpa:
+    open-in-view: true
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-ui
+  main:
+    allow-bean-definition-overriding: true
+app:
+  name: irrigation-system
+  version: 1
+  description: Recruitment task for Andela's client
+
+rabbitmq:
+  queue:
+    sms:
+      name: notification
+  exchange:
+    name: haud_exchange
+  routing:
+    charging:
+      key: charging_routing_key
+    notification:
+      key: notification_routing_key
+
+resilience4j:
+  retry:
+    instances:
+      flightSearch:
+        max-attempts: 5
+        waitDuration: 3s
