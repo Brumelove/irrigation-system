@@ -1,6 +1,6 @@
 package com.andela.irrigationsystem.dto;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,15 +14,14 @@ import java.util.Set;
 @Getter
 @Setter
 public class PlotDto {
-    @ApiModelProperty(hidden = true)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
     private String ownerName;
     private String location;
     private String cropType;
     private String cropName;
-    private Long size;
-
-    @ApiModelProperty(hidden = true)
+    private Long sizeInMeters;
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Set<TimeSlotsDto> timeSlots;
 
 }

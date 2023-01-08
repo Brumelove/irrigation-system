@@ -3,7 +3,8 @@ package com.andela.irrigationsystem.dto;
 import com.andela.irrigationsystem.enumerations.FrequencyType;
 import com.andela.irrigationsystem.enumerations.StatusType;
 import com.andela.irrigationsystem.model.Plot;
-import io.swagger.annotations.ApiModelProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,16 +15,19 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TimeSlotsDto {
-    @ApiModelProperty(hidden = true)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
-    private int weekDay;
+    private int dayValue;
     private int timeValue;
+    private String sensorNumber;
+    @JsonIgnore
+    private String humanReadableTime;
+
     private Double cubicWaterAmount;
     private StatusType status = StatusType.PENDING;
     private FrequencyType frequency;
-    private int numberOfRetries;
 
-    @ApiModelProperty(hidden = true)
+    @JsonIgnore
     private Plot plot;
 
 }

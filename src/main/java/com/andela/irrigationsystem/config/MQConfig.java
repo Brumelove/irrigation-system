@@ -22,7 +22,7 @@ public class MQConfig {
     private final RabbitMQPropConfig config;
 
     @Bean
-    public Queue smsQueue() {
+    public Queue emailQueue() {
         return new Queue(config.getEmailQueue());
     }
 
@@ -34,7 +34,7 @@ public class MQConfig {
     @Bean
     public Binding binding() {
         return BindingBuilder
-                .bind(smsQueue())
+                .bind(emailQueue())
                 .to(exchange())
                 .with(config.getEmailKey());
     }

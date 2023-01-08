@@ -1,23 +1,30 @@
 package com.andela.irrigationsystem.service;
 
-import com.andela.irrigationsystem.client.SensorClient;
 import com.andela.irrigationsystem.config.RabbitMQPropConfig;
 import com.andela.irrigationsystem.dto.EmailDto;
+import com.andela.irrigationsystem.dto.SensorDto;
 import com.andela.irrigationsystem.dto.TimeSlotsDto;
-import io.github.resilience4j.retry.annotation.Retry;
+import com.andela.irrigationsystem.enumerations.FrequencyType;
+import com.andela.irrigationsystem.exception.BadRequestException;
+import com.andela.irrigationsystem.exception.ElementNotFoundException;
+import com.andela.irrigationsystem.mapper.IrrigationMapper;
+import com.andela.irrigationsystem.repositories.SensorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
@@ -30,36 +37,33 @@ import java.util.concurrent.ScheduledFuture;
 @RequiredArgsConstructor
 public class SensorService {
     private final RabbitTemplate template;
-    private final SensorClient sensorClient;
     private final RabbitMQPropConfig config;
-
+    private final SensorRepository repository;
+    private final IrrigationMapper mapper;
     private final TaskScheduler taskScheduler;
 
-    Map<String, ScheduledFuture<?>> jobsMap = new HashMap<>();
+    public boolean triggerSensor(String sensorNumber, Long plotId, TimeSlotsDto timeSlotsDto) {
 
-    @Retry(name = "triggerSensor", fallbackMethod = "sendMessage")
-    public boolean triggerSensor(Long plotId, TimeSlotsDto timeSlotsDto) {
-        var cronExpression = convertToCronExpression(timeSlotsDto);
-
-        return scheduleATask(timeSlotsDto.getId().toString(), cronExpression, plotId);
-
-
+        var cronExpression = convertToCronExpression(timeSlotsDto.getFrequency(), timeSlotsDto.getTimeValue(), timeSlotsDto.getDayValue());
+        return scheduleATask(cronExpression, plotId, sensorNumber, timeSlotsDto.getCubicWaterAmount()).isDone();
     }
 
-    private boolean scheduleATask(String jobId, String cronExpression, Long plotId) {
+    private ScheduledFuture<?> scheduleATask(String cronExpression, Long plotId, String sensorNumber, Double cubicAmountOfWater) {
         //set's task
-        ScheduledFuture<?> scheduledTask = taskScheduler.schedule(irrigateLand(plotId),
+        return taskScheduler.schedule(irrigateLand(sensorNumber, plotId, cubicAmountOfWater),
                 //trigger the cronjob
                 new CronTrigger(cronExpression, TimeZone.getTimeZone(ZoneId.of("UTC"))));
-        return scheduledTask.isDone();
     }
 
-    private Runnable irrigateLand(Long plotId) {
+    private Runnable irrigateLand(String sensorNumber, Long plotId, Double cubicAmountOfWater) {
         return () -> {
             log.info("LAND IRRIGATION STARTED FOR PLOT " + plotId);
 
-            var pong = sensorClient.pong("Ping");
-            if (pong.isEmpty()) {
+            ResponseEntity<String> pong = null;
+            try {
+                pong = pingSensor(sensorNumber, plotId, cubicAmountOfWater);
+            } catch (Exception e) {
+                sendMessage(e);
                 throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Sensor unreachable");
             }
             log.info("LAND IRRIGATION COMPLETED FOR PLOT " + plotId);
@@ -67,19 +71,18 @@ public class SensorService {
         };
     }
 
-    private String convertToCronExpression(TimeSlotsDto timeSlotsDto) {
-        int timeValue = timeSlotsDto.getTimeValue();
-        int dayOfTheWeek = timeSlotsDto.getWeekDay();
-
-        String cronExpression = switch (timeSlotsDto.getFrequency()) {
-            case HOURLY -> "0 0 " + timeValue + "* * *";
-            case DAILY -> "* *  * " + timeValue + "* *";
-            case BIWEEKLY -> "0 0 " + timeValue + "* * " + dayOfTheWeek;
+    public String convertToCronExpression(FrequencyType frequencyType, int timeValue, int day) {
+        String cronExpression = switch (frequencyType) {
+            case HOURLY -> "0 0 " + timeValue + " * * *";
+            case MINUTE -> "0 */" + timeValue + " * ? * *";
+            case DAILY -> "0 0 0" + timeValue + "* *";
+            case WEEKLY -> "0 0 " + timeValue + "* * " + day;
+            case BIWEEKLY -> "0 0 " + timeValue + "* * " + day;
             case MONTHLY -> "0 0 0 " + timeValue + "* *";
-            case YEARLY -> "0 0 0 " + timeValue + " " + dayOfTheWeek + " *";
+            case YEARLY -> "0 0 0 " + timeValue + " " + day + " *";
             default -> "0 0 0 * * *";
         };
-        log.info("CRON EXPRESSION ::: {} {}", timeSlotsDto.getFrequency(), cronExpression);
+        log.info("CRON EXPRESSION ::: {} {}", frequencyType, cronExpression);
         return cronExpression;
     }
 
@@ -89,20 +92,45 @@ public class SensorService {
      * sending message to charging service irrespective of spam status
      * rejecting message when its a spam
      * sending message when to recipient when not a spam
-     *
-     * @param emailDto contains email information required for delivery
      */
-    private String sendMessage(EmailDto emailDto) {
+    @Recover()
+    private void sendMessage(Exception e) {
         String messageId = UUID.randomUUID().toString() +
                 LocalDateTime.now().getNano();
-        emailDto.setMessageId(messageId);
 
-        log.info("Notification message sent -> {}", emailDto.getRecipientsAddress());
-        template.convertAndSend(config.getExchange(), config.getNotificationJsonKey(), emailDto);
+        var emailDto = EmailDto.builder().message("Sensor unResponsive for irrigation")
+                .sendersAddress("brumelovee@gmail.com")
+                .recipientsAddress("brume.love@andela.com")
+                .messageId(messageId)
+                .build();
 
-        return messageId;
+        log.info("Notification message sent to -> {}", emailDto.getRecipientsAddress());
+        template.convertAndSend(config.getExchange(), config.getEmailKey(), emailDto);
     }
 
+    @Retryable(value = Exception.class, maxAttempts = 2, backoff = @Backoff(delay = 10, multiplier = 2))
+    private ResponseEntity<String> pingSensor(String sensorNumber, Long plotId, Double cubicWater) {
+        var sensor = getSensorAddress(sensorNumber, plotId);
+
+        return WebClient.create().post()
+                .uri(sensor + "/" + cubicWater)
+                .retrieve().toEntity(String.class).block();
+    }
+
+    public String getSensorAddress(String sensorNumber, Long plotId) {
+        return
+                repository.getSensorEndpointBySensorNumberAndPlotId(sensorNumber, plotId)
+                        .orElseThrow(() -> new ElementNotFoundException("Sensor Address is not be found"));
+    }
+
+    public SensorDto createSensor(SensorDto sensorDto) {
+        try {
+            var sensor = mapper.mapSensorDtoToEntity(sensorDto);
+            return mapper.mapSensorEntityToDto(repository.save(sensor));
+        } catch (Exception e) {
+            throw new BadRequestException(sensorDto.getSensorNumber() + " is not unique");
+        }
+    }
 
 }
 

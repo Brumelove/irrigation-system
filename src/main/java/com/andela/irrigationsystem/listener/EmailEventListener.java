@@ -7,7 +7,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 /**
- * This class provides a method the listens to the sms queue for message
+ * This class provides a method the listens to the email queue for message
  * and delivers when it finds a request
  *
  * @author Brume
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class EmailEventListener {
 
     @RabbitListener(queues = "${rabbitmq.queue.email.name}")
-    public void handleSmsNotification(EmailEvent emailEvent) {
+    public static void handleEmailNotification(EmailEvent emailEvent) {
         //At this point a message sending service is called to deliver message to recipient
         log.info("---> Message::[{}] with referenceNumber::{} from source::{} has been sent to destination::{} successfully",
                 emailEvent.message(), emailEvent.referenceNumber(), emailEvent.sourceAddress(),

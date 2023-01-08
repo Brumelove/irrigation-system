@@ -9,7 +9,7 @@ spring:
     username: sa
     password:
     hikari:
-      maximum-pool-size: 2
+      maximum-pool-size: 5
     driver-class-name: org.h2.Driver
   jpa:
     open-in-view: true
@@ -33,19 +33,37 @@ app:
 
 rabbitmq:
   queue:
-    sms:
+    email:
       name: notification
   exchange:
-    name: haud_exchange
+    name: irrigation_exchange
   routing:
-    charging:
-      key: charging_routing_key
-    notification:
-      key: notification_routing_key
+    email:
+      key: email_routing_key
 
-resilience4j:
-  retry:
-    instances:
-      flightSearch:
-        max-attempts: 5
-        waitDuration: 3s
+camunda:
+  bpm:
+    default-serialization-format: application/json
+    authorization:
+      enabled: false
+    filter:
+      create: All
+    history-level: activity
+    id-generator: strong
+    database:
+      schema-update: true
+      type: h2
+    webapp:
+      index-redirect-enabled: false
+    admin-user:
+      id: demo
+      password: demo
+    login:
+      enabled: true
+      user-id: admin
+#resilience4j:
+#  retry:
+#    instances:
+#      flightSearch:
+#        max-attempts: 5
+#        waitDuration: 3s

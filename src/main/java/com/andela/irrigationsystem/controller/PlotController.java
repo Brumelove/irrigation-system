@@ -4,11 +4,11 @@ import com.andela.irrigationsystem.dto.PlotDto;
 import com.andela.irrigationsystem.dto.TimeSlotsDto;
 import com.andela.irrigationsystem.exception.BadRequestException;
 import com.andela.irrigationsystem.service.PlotService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -36,9 +36,9 @@ public class PlotController {
         return ResponseEntity.ok().body(service.configurePlotOfLand(plotId, request));
     }
 
-    @PutMapping
-    public ResponseEntity<PlotDto> editAPlotOfLand(@Valid @RequestBody PlotDto request) {
-        return ResponseEntity.ok().body(service.editPlot(request));
+    @PutMapping("/{plotId}")
+    public ResponseEntity<PlotDto> editAPlotOfLand(@Valid @RequestBody PlotDto request, @PathVariable Long plotId) {
+        return ResponseEntity.ok().body(service.editPlot(plotId, request));
     }
 
     @GetMapping

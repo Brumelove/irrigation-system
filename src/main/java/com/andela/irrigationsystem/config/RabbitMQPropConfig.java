@@ -13,18 +13,13 @@ import org.springframework.stereotype.Component;
 @Data
 public class RabbitMQPropConfig {
 
-    @Value("${rabbitmq.queue.sms.name}")
+    @Value("${rabbitmq.queue.email.name}")
     private String emailQueue;
 
     @Value("${rabbitmq.exchange.name}")
     private String exchange;
 
-    @Value("${rabbitmq.routing.sms.key}")
+    @Value("${rabbitmq.routing.email.key}")
     private String emailKey;
 
-    @Value("${rabbitmq.routing.charging.key}")
-    private String chargingKey;
-
-    @Value("${rabbitmq.routing.notification.key}")
-    private String notificationJsonKey;
 }

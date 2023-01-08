@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1q208ox"
+                  targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.5.1"
+                  modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.18.0">
+    <bpmn:process id="irrigation_system" name="IrrigationSystem" isExecutable="true">
+        <bpmn:startEvent id="StartEvent_1">
+            <bpmn:outgoing>Flow_04t4l06</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:sequenceFlow id="Flow_04t4l06" sourceRef="StartEvent_1" targetRef="create_a_plot"/>
+        <bpmn:sequenceFlow id="Flow_126izkc" sourceRef="create_a_plot" targetRef="configure_a_plot"/>
+        <bpmn:sequenceFlow id="Flow_1i22zqu" sourceRef="configure_a_plot" targetRef="Activity_1hfv319"/>
+        <bpmn:serviceTask id="trigger_sensor" name="Trigger Sensor" camunda:delegateExpression="${SensorDelegate}">
+            <bpmn:extensionElements/>
+            <bpmn:incoming>Flow_1klsh07</bpmn:incoming>
+            <bpmn:outgoing>Flow_1mqcnq0</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:sequenceFlow id="Flow_1klsh07" sourceRef="Activity_1hfv319" targetRef="trigger_sensor"/>
+        <bpmn:endEvent id="Event_093qia7">
+            <bpmn:incoming>Flow_1mqcnq0</bpmn:incoming>
+            <bpmn:incoming>Flow_1lmbp14</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:sequenceFlow id="Flow_1mqcnq0" sourceRef="trigger_sensor" targetRef="Event_093qia7"/>
+        <bpmn:serviceTask id="create_a_plot" name="Create a Plot" camunda:delegateExpression="#{PlotDelegate}">
+            <bpmn:extensionElements/>
+            <bpmn:incoming>Flow_04t4l06</bpmn:incoming>
+            <bpmn:outgoing>Flow_126izkc</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:serviceTask id="configure_a_plot" name="Configure a plot" camunda:delegateExpression="#{PlotDelegate}">
+            <bpmn:extensionElements/>
+            <bpmn:incoming>Flow_126izkc</bpmn:incoming>
+            <bpmn:outgoing>Flow_1i22zqu</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:serviceTask id="Activity_1hfv319" name="Create a sensor" camunda:delegateExpression="#{SensorDelegate}">
+            <bpmn:incoming>Flow_1i22zqu</bpmn:incoming>
+            <bpmn:outgoing>Flow_1klsh07</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:boundaryEvent id="Event_10uvn2v" attachedToRef="trigger_sensor">
+            <bpmn:outgoing>Flow_0y5i02o</bpmn:outgoing>
+            <bpmn:errorEventDefinition id="ErrorEventDefinition_1b4aiqz"/>
+        </bpmn:boundaryEvent>
+        <bpmn:sequenceFlow id="Flow_0y5i02o" sourceRef="Event_10uvn2v" targetRef="send_notification"/>
+        <bpmn:receiveTask id="receive_email" name="Receive Email">
+            <bpmn:extensionElements/>
+            <bpmn:incoming>Flow_05mh6h8</bpmn:incoming>
+            <bpmn:outgoing>Flow_1lmbp14</bpmn:outgoing>
+        </bpmn:receiveTask>
+        <bpmn:sequenceFlow id="Flow_1lmbp14" sourceRef="receive_email" targetRef="Event_093qia7"/>
+        <bpmn:sendTask id="send_notification" name="Send Notification" camunda:delegateExpression="">
+            <bpmn:extensionElements/>
+            <bpmn:incoming>Flow_0y5i02o</bpmn:incoming>
+            <bpmn:outgoing>Flow_05mh6h8</bpmn:outgoing>
+        </bpmn:sendTask>
+        <bpmn:sequenceFlow id="Flow_05mh6h8" sourceRef="send_notification" targetRef="receive_email"/>
+    </bpmn:process>
+    <bpmn:message id="Message_1aij522" name="Message_1aij522"/>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+        <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="irrigation_system">
+            <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+                <dc:Bounds x="179" y="99" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Activity_0zywwdk_di" bpmnElement="trigger_sensor">
+                <dc:Bounds x="760" y="77" width="100" height="80"/>
+                <bpmndi:BPMNLabel/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Activity_0rpg68w_di" bpmnElement="send_notification">
+                <dc:Bounds x="760" y="250" width="100" height="80"/>
+                <bpmndi:BPMNLabel/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Activity_0br4yxj_di" bpmnElement="receive_email">
+                <dc:Bounds x="760" y="420" width="100" height="80"/>
+                <bpmndi:BPMNLabel/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Event_093qia7_di" bpmnElement="Event_093qia7">
+                <dc:Bounds x="902" y="99" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Activity_0vi3jw7_di" bpmnElement="create_a_plot">
+                <dc:Bounds x="280" y="77" width="100" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Activity_1qvqpbx_di" bpmnElement="configure_a_plot">
+                <dc:Bounds x="450" y="77" width="100" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Activity_11c5nqd_di" bpmnElement="Activity_1hfv319">
+                <dc:Bounds x="620" y="77" width="100" height="80"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape id="Event_0j83kgu_di" bpmnElement="Event_10uvn2v">
+                <dc:Bounds x="792" y="139" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge id="Flow_04t4l06_di" bpmnElement="Flow_04t4l06">
+                <di:waypoint x="215" y="117"/>
+                <di:waypoint x="280" y="117"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Flow_126izkc_di" bpmnElement="Flow_126izkc">
+                <di:waypoint x="380" y="117"/>
+                <di:waypoint x="450" y="117"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Flow_1i22zqu_di" bpmnElement="Flow_1i22zqu">
+                <di:waypoint x="550" y="117"/>
+                <di:waypoint x="620" y="117"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Flow_05mh6h8_di" bpmnElement="Flow_05mh6h8">
+                <di:waypoint x="810" y="330"/>
+                <di:waypoint x="810" y="420"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Flow_1klsh07_di" bpmnElement="Flow_1klsh07">
+                <di:waypoint x="720" y="117"/>
+                <di:waypoint x="760" y="117"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Flow_1mqcnq0_di" bpmnElement="Flow_1mqcnq0">
+                <di:waypoint x="860" y="117"/>
+                <di:waypoint x="902" y="117"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Flow_1lmbp14_di" bpmnElement="Flow_1lmbp14">
+                <di:waypoint x="860" y="460"/>
+                <di:waypoint x="881" y="460"/>
+                <di:waypoint x="881" y="117"/>
+                <di:waypoint x="902" y="117"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="Flow_0y5i02o_di" bpmnElement="Flow_0y5i02o">
+                <di:waypoint x="810" y="175"/>
+                <di:waypoint x="810" y="250"/>
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,54 @@
+{
+  "timeSlots": [
+    {
+      "id": "1",
+      "humanReadableTime": "every 5 hours",
+      "frequency": "hourly",
+      "day": 0,
+      "timeValue": 5,
+      "cubicWaterAmount": 5000,
+      "sesnsorNumber": "SGEB243949",
+      "status": "PENDING"
+    },
+    {
+      "id": "2",
+      "humanReadableTime": "6pm daily",
+      "frequency": "daily",
+      "day": 7,
+      "timeValue": 18,
+      "cubicWaterAmount": 5000,
+      "sesnsorNumber": "SGEB243949",
+      "status": "PENDING"
+    },
+    {
+      "id": "3",
+      "humanReadableTime": "2pm on Thursdays",
+      "frequency": "weekly",
+      "day": 7,
+      "timeValue": "14",
+      "cubicWaterAmount": 8000,
+      "sesnsorNumber": "SGEB243949",
+      "status": "PENDING"
+    },
+    {
+      "id": "4",
+      "humanReadableTime": "1pm on Wednessdays every 2 weeks",
+      "frequency": "bi-weekly",
+      "day": 4,
+      "timeValue": 13,
+      "cubicWaterAmount": 8000,
+      "sesnsorNumber": "SGEB243949",
+      "status": "PENDING"
+    },
+    {
+      "id": "5",
+      "humanReadableTime": "4pm on the 28th of the month",
+      "category": "monthly",
+      "day": 28,
+      "timeValue": 16,
+      "cubicWaterAmount": 8000,
+      "sesnsorNumber": "SGEB243949",
+      "status": "PENDING"
+    }
+  ]
+}

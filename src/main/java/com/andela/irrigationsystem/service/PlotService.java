@@ -8,15 +8,17 @@ import com.andela.irrigationsystem.mapper.IrrigationMapper;
 import com.andela.irrigationsystem.model.Plot;
 import com.andela.irrigationsystem.repositories.PlotRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author Brume
  **/
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class PlotService {
     public final IrrigationMapper mapper;
@@ -30,9 +32,10 @@ public class PlotService {
         return mapper.mapPlotEntityToDto(repository.save(entity));
     }
 
-    public PlotDto editPlot(PlotDto plotDto) {
-        var plot = getById(plotDto.getId());
+    public PlotDto editPlot(Long id, PlotDto plotDto) {
+        var plot = getById(id);
         if (plot != null) {
+            plotDto.setId(id);
             return addPlot(plotDto);
         }
         throw new ElementNotFoundException("plot does not exist");
@@ -60,15 +63,20 @@ public class PlotService {
         if (plot != null) {
             var entity = mapper.mapTimeSlotsDtoToEntity(timeSlots);
             entity.setPlot(plot);
-            plot.setTimeSlots(Set.of(entity));
 
-            editPlot(mapper.mapPlotEntityToDto(plot));
+            triggerSensor(plotId, timeSlots);
             return mapper.mapTimeSlotsEntityToDto(timeSlotsService.save(entity));
         } else throw new ElementNotFoundException("plot id does not exist");
     }
 
-    private void triggerSensor(Long plotId, TimeSlotsDto timeSlots) {
-        var response = sensorService.triggerSensor(plotId, timeSlots);
+    @Async
+    void triggerSensor(Long plotId, TimeSlotsDto timeSlots) {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage());
+        }
+        var response = sensorService.triggerSensor(timeSlots.getSensorNumber(), plotId, timeSlots);
         if (response) {
             timeSlots.setStatus(StatusType.SUCCESS);
         } else timeSlots.setStatus(StatusType.UNSUCCESSFUL);

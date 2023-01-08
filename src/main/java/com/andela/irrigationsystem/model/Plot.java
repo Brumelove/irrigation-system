@@ -1,13 +1,10 @@
 package com.andela.irrigationsystem.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
-import org.hibernate.Hibernate;
 
-import java.util.Objects;
+import javax.persistence.*;
 import java.util.Set;
 
 /**
@@ -17,7 +14,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Getter
 @Setter
-@ToString
 public class Plot {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +22,7 @@ public class Plot {
     private String location;
     private String cropType;
     private String cropName;
-    private Long size;
+    private Long sizeInMeters;
 
     @OneToMany(mappedBy = "plot", cascade = CascadeType.ALL)
     private Set<TimeSlots> timeSlots;
@@ -34,9 +30,8 @@ public class Plot {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Plot plot = (Plot) o;
-        return id != null && Objects.equals(id, plot.id);
+        if (!(o instanceof Plot plot)) return false;
+        return getId().equals(plot.getId()) && getOwnerName().equals(plot.getOwnerName()) && getLocation().equals(plot.getLocation()) && getCropType().equals(plot.getCropType()) && getCropName().equals(plot.getCropName()) && getSizeInMeters().equals(plot.getSizeInMeters()) && getTimeSlots().equals(plot.getTimeSlots());
     }
 
     @Override

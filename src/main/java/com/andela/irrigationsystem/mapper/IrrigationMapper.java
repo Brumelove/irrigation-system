@@ -37,4 +37,5 @@ public interface IrrigationMapper {
     Sensor mapSensorDtoToEntity(SensorDto sensorDto);
 
     SensorDto mapSensorEntityToDto(Sensor sensor);
+
 }
