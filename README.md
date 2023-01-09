@@ -1,14 +1,17 @@
 # irrigation-system
 
 Build project by running mvn clean install.
+
 Swagger Link : http://localhost:8092/irrigation-system/swagger-ui/index.html#/
 Cammunda Link: http://localhost:8092/irrigation-system/camunda/app/cockpit/default/#/process-definition/
 Database Link: http://localhost:8092/irrigation-system/h2-ui/
-![](/home/brume/Desktop/overview.png)
+
+![overview.png](..%2F..%2FDesktop%2Foverview.png)
+
 The Image above shows an overview of the automatic irrigation system.Each plot of land has a sensor attached to it. A
 farm land can have multiple plots of land. Each plot of land has a time slots for irrigation.
 
-![](/home/brume/Desktop/high level.png)
+![high level.png](..%2F..%2FDesktop%2Fhigh%20level.png)
 The Image above shows a high level design of the architecture. A plot of land has its size in meters, the crop name,
 type(important for prediction), location and so forth.
 For the timeslots we need to know the amount of water needed for irrigation as well as the time, frequency, day it needs

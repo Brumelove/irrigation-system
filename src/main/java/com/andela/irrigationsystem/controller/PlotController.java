@@ -16,7 +16,7 @@ import java.util.List;
  **/
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/rest/plots")
+@RequestMapping("/rest/plot")
 public class PlotController {
     private final PlotService service;
 

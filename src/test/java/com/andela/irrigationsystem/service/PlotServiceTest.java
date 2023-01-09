@@ -1,13 +1,9 @@
 package com.andela.irrigationsystem.service;
 
-import com.andela.irrigationsystem.TimeSlotObject;
-import com.andela.irrigationsystem.dto.PlotDto;
+import com.andela.irrigationsystem.ObjectBuilder;
 import com.andela.irrigationsystem.enumerations.FrequencyType;
 import com.andela.irrigationsystem.mapper.IrrigationMapper;
-import com.andela.irrigationsystem.model.Plot;
 import com.andela.irrigationsystem.repositories.PlotRepository;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -40,8 +36,8 @@ class PlotServiceTest {
 
     @Test
     void addPlot() {
-        var plot = plot();
-        var plotDto = plotDto();
+        var plot = ObjectBuilder.plot();
+        var plotDto = ObjectBuilder.plotDto();
 
         when(mapper.mapPlotDtoToEntity(plotDto)).thenReturn(plot);
         when(mapper.mapPlotEntityToDto(plot)).thenReturn(plotDto);
@@ -55,18 +51,19 @@ class PlotServiceTest {
 
     @Test
     void editPlot() {
-        var plot = plot();
+        var plot = ObjectBuilder.plot();
         plot.setLocation("Lagos");
         plot.setOwnerName("Brume");
 
-        var plotDto = plotDto();
+        var plotDto = ObjectBuilder.plotDto();
         plot.setLocation("Lagos");
         plot.setOwnerName("Brume");
 
         when(repository.findById(1L)).thenReturn(Optional.of(plot));
-        when(mapper.mapPlotEntityToDto(plot)).thenReturn(plotDto);
 
         when(mapper.mapPlotDtoToEntity(plotDto)).thenReturn(plot);
+        when(mapper.mapPlotEntityToDto(plot)).thenReturn(plotDto);
+
         when(repository.save(plot)).thenReturn(plot);
         var response = plotService.editPlot(1l, plotDto);
 
@@ -79,7 +76,7 @@ class PlotServiceTest {
 
     @Test
     void getById() {
-        var plot = plot();
+        var plot = ObjectBuilder.plot();
 
         when(repository.findById(1L)).thenReturn(Optional.of(plot));
         var response = plotService.getById(1L);
@@ -91,9 +88,9 @@ class PlotServiceTest {
 
     @Test
     void getAllPlots() {
-        var plot = plot();
+        var plot = ObjectBuilder.plot();
 
-        when(mapper.mapPlotEntityListToDtoList(List.of(plot))).thenReturn(List.of(plotDto()));
+        when(mapper.mapPlotEntityListToDtoList(List.of(plot))).thenReturn(List.of(ObjectBuilder.plotDto()));
         when(repository.findAll()).thenReturn(List.of(plot));
         var response = plotService.getAllPlots();
 
@@ -104,9 +101,9 @@ class PlotServiceTest {
 
     @Test
     void configurePlotOfLand() throws IOException {
-        var plot = plot();
-        var timeSlotsDto = TimeSlotObject.timeSlotsDto(FrequencyType.HOURLY, 2, 0);
-        var timeSlots = TimeSlotObject.timeSlot(FrequencyType.HOURLY, 2, 0);
+        var plot = ObjectBuilder.plot();
+        var timeSlotsDto = ObjectBuilder.timeSlotsDto(FrequencyType.HOURLY, 2, 0);
+        var timeSlots = ObjectBuilder.timeSlot(FrequencyType.HOURLY, 2, 0);
 
         when(repository.findById(1L)).thenReturn(Optional.of(plot));
         when(mapper.mapTimeSlotsDtoToEntity(timeSlotsDto)).thenReturn(timeSlots);
@@ -120,25 +117,6 @@ class PlotServiceTest {
         assertEquals("hourly", response.getFrequency().name().toLowerCase());
     }
 
-    private Plot plot() {
-        Plot plot = new Plot();
-        plot.setId(1L);
-        plot.setSizeInMeters(RandomUtils.nextLong());
-        plot.setCropType(RandomStringUtils.randomAlphanumeric(4));
-        plot.setCropName(RandomStringUtils.randomAlphanumeric(4));
-
-        return plot;
-    }
-
-    private PlotDto plotDto() {
-        PlotDto plot = new PlotDto();
-        plot.setId(1L);
-        plot.setSizeInMeters(RandomUtils.nextLong());
-        plot.setCropType(RandomStringUtils.randomAlphanumeric(4));
-        plot.setCropName(RandomStringUtils.randomAlphanumeric(4));
-
-        return plot;
-    }
 
 
 }

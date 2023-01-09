@@ -1,7 +1,6 @@
 package com.andela.irrigationsystem.service;
 
 import com.andela.irrigationsystem.config.RabbitMQPropConfig;
-import com.andela.irrigationsystem.config.RetryConfig;
 import com.andela.irrigationsystem.dto.EmailDto;
 import com.andela.irrigationsystem.dto.SensorDto;
 import com.andela.irrigationsystem.dto.TimeSlotsDto;
@@ -11,6 +10,7 @@ import com.andela.irrigationsystem.exception.ElementNotFoundException;
 import com.andela.irrigationsystem.exception.ElementWithSameIDAlreadyExistsException;
 import com.andela.irrigationsystem.mapper.IrrigationMapper;
 import com.andela.irrigationsystem.repositories.SensorRepository;
+import com.andela.irrigationsystem.service.integration.SensorInterface;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -34,14 +34,12 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SensorService {
-    private final RetryConfig retryConfig;
+public class SensorService implements SensorInterface {
     private final RabbitTemplate template;
     private final RabbitMQPropConfig config;
     @Autowired
     @Lazy
     public TimeSlotsService timeSlotsService;
-    int counter = 0;
     private final SensorRepository repository;
     private final IrrigationMapper mapper;
     private final TaskScheduler taskScheduler;
@@ -74,15 +72,9 @@ public class SensorService {
         return () -> {
             log.info("LAND IRRIGATION STARTED FOR PLOT " + plotId);
 
-            RetryTemplate template = RetryTemplate.builder()
-                    .maxAttempts(2)
-                    .fixedBackoff(1000)
-                    .retryOn(Exception.class)
-                    .build();
+            ResponseEntity<String> ping;
 
-            ResponseEntity<String> ping = null;
-
-            ping = pingSensor(sensorNumber, plotId, timeSlots.getCubicWaterAmount());
+            ping = integrateSensor(sensorNumber, plotId, timeSlots.getCubicWaterAmount());
 
             if (ping != null && ping.getStatusCode().is2xxSuccessful()) {
                 timeSlots.setStatus(StatusType.SUCCESS);
@@ -126,23 +118,23 @@ public class SensorService {
      * @param cubicWater
      * @return ResponseEntity<String>
      */
-    public ResponseEntity<String> pingSensor(String sensorNumber, Long plotId, Double cubicWater) {
+    @Override
+    public ResponseEntity<String> integrateSensor(String sensorNumber, Long plotId, Double cubicWater) {
         try {
             RetryTemplate template = RetryTemplate.builder()
                     .maxAttempts(2)
                     .fixedBackoff(1000)
                     .retryOn(Exception.class)
                     .build();
-            counter++;
             template.execute(arg0 -> {
                 var sensor = getSensorAddress(sensorNumber, plotId);
 
                 return WebClient.create().post()
                         .uri(sensor + "/" + cubicWater)
-                        .retrieve().toEntity(String.class).block();
+                        .retrieve().bodyToMono(String.class);
             });
 
-        } catch (ElementNotFoundException | NullPointerException e) {
+        } catch (Exception e) {
             sendMessage();
             log.error(e.getMessage());
         }
