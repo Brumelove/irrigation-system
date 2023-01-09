@@ -28,6 +28,7 @@ In a system with a high write, I would consider making use of a Quartz scheduler
 A sample TimeSLots.Json is found in the resources directory.
 
 ![img.png](img.png)
+
 Image above shows a rough workflow design of the process. Due to time constraint I am unable to fully implement the
 service tasks.
 
