@@ -112,7 +112,6 @@ class PlotServiceTest {
         when(mapper.mapTimeSlotsDtoToEntity(timeSlotsDto)).thenReturn(timeSlots);
 
         when(mapper.mapTimeSlotsEntityToDto(timeSlots)).thenReturn(timeSlotsDto);
-        when(sensorService.triggerSensor(timeSlotsDto.getSensorNumber(), 1L, timeSlotsDto)).thenReturn(true);
         when(timeSlotsService.save(timeSlots)).thenReturn(timeSlots);
         var response = plotService.configurePlotOfLand(1L, timeSlotsDto);
 

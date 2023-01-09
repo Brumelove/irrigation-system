@@ -11,6 +11,6 @@ import java.util.Optional;
  **/
 public interface SensorRepository extends JpaRepository<Sensor, Long> {
 
-    @Query("select s.sensorsEndpoint from Sensor s where s.sensorNumber = ?1 and s.plotId = ?2")
+    @Query("select s.sensorsEndpoint from Sensor s where s.sensorNumber =:sensorNumber and s.plotId =:plotId")
     Optional<String> getSensorEndpointBySensorNumberAndPlotId(String sensorNumber, Long plotId);
 }

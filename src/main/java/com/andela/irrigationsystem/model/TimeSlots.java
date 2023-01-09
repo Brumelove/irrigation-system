@@ -25,7 +25,9 @@ public class TimeSlots {
     private int timeValue;
     private String sensorNumber;
     private Double cubicWaterAmount;
+    @Enumerated(EnumType.STRING)
     private StatusType status;
+    @Enumerated(EnumType.STRING)
     private FrequencyType frequency;
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinTable(name = "configure_plot",

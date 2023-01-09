@@ -2,14 +2,12 @@ package com.andela.irrigationsystem.service;
 
 import com.andela.irrigationsystem.dto.PlotDto;
 import com.andela.irrigationsystem.dto.TimeSlotsDto;
-import com.andela.irrigationsystem.enumerations.StatusType;
 import com.andela.irrigationsystem.exception.ElementNotFoundException;
 import com.andela.irrigationsystem.mapper.IrrigationMapper;
 import com.andela.irrigationsystem.model.Plot;
 import com.andela.irrigationsystem.repositories.PlotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,12 +24,26 @@ public class PlotService {
     public final SensorService sensorService;
     private final PlotRepository repository;
 
+    /**
+     * Create a plot of land
+     *
+     * @param plotDto
+     * @return
+     */
     public PlotDto addPlot(PlotDto plotDto) {
         var entity = mapper.mapPlotDtoToEntity(plotDto);
 
         return mapper.mapPlotEntityToDto(repository.save(entity));
     }
 
+    /**
+     * Edit a plot of land
+     *
+     * @param id
+     * @param plotDto
+     * @return PlotDto
+     * @throws ElementNotFoundException
+     */
     public PlotDto editPlot(Long id, PlotDto plotDto) {
         var plot = getById(id);
         if (plot != null) {
@@ -69,19 +81,20 @@ public class PlotService {
         } else throw new ElementNotFoundException("plot id does not exist");
     }
 
-    @Async
+
+    /**
+     * method called to trigger sensor
+     *
+     * @param plotId
+     * @param timeSlots
+     */
     void triggerSensor(Long plotId, TimeSlotsDto timeSlots) {
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
             log.error(e.getMessage());
         }
-        var response = sensorService.triggerSensor(timeSlots.getSensorNumber(), plotId, timeSlots);
-        if (response) {
-            timeSlots.setStatus(StatusType.SUCCESS);
-        } else timeSlots.setStatus(StatusType.UNSUCCESSFUL);
-
-        timeSlotsService.save(mapper.mapTimeSlotsDtoToEntity(timeSlots));
+        sensorService.scheduleATask(plotId, timeSlots.getSensorNumber(),timeSlots);
     }
 
 }

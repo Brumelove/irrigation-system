@@ -14,7 +14,7 @@
       "id": "2",
       "humanReadableTime": "6pm daily",
       "frequency": "daily",
-      "day": 7,
+      "day": 0,
       "timeValue": 18,
       "cubicWaterAmount": 5000,
       "sesnsorNumber": "SGEB243949",

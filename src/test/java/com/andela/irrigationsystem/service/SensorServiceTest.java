@@ -1,6 +1,7 @@
 package com.andela.irrigationsystem.service;
 
 import com.andela.irrigationsystem.config.RabbitMQPropConfig;
+import com.andela.irrigationsystem.dto.EmailDto;
 import com.andela.irrigationsystem.dto.SensorDto;
 import com.andela.irrigationsystem.enumerations.FrequencyType;
 import com.andela.irrigationsystem.mapper.IrrigationMapper;
@@ -12,15 +13,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Brume
@@ -42,7 +46,13 @@ class SensorServiceTest {
 
     @Test
     void triggerSensor() {
+        var sensorEndpoint = RandomStringUtils.randomAlphanumeric(7);
+        var sensorNumber = RandomStringUtils.randomAlphanumeric(7);
+        var plotId = RandomUtils.nextLong();
+        var webClient = Mockito.mock(WebClient.class);
 
+        when(webClient.post().uri(RandomStringUtils.randomAlphanumeric(3))).thenReturn(Mockito.any());
+        when(repository.getSensorEndpointBySensorNumberAndPlotId(sensorNumber, plotId)).thenReturn(Optional.of(sensorEndpoint));
     }
 
 
@@ -86,6 +96,19 @@ class SensorServiceTest {
     void convertToCronExpression() {
 
         var cronExpression = sensorService.convertToCronExpression(FrequencyType.WEEKLY, 3, 4);
-        System.out.println(cronExpression);
+
+        assertNotNull(cronExpression);
+        assertEquals("0 0 " + 3 + " * * " + 4, cronExpression);
+    }
+
+    @Test
+    public void testSendMessage_whenRequestIsValid_shouldReturnMessageId() {
+
+
+        sensorService.sendMessage();
+
+
+        //verify that message is sent to notification service
+        verify(template, times(1)).convertAndSend(any(), any(), any(EmailDto.class));
     }
 }

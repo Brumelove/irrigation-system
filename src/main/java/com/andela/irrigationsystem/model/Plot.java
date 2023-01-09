@@ -3,6 +3,7 @@ package com.andela.irrigationsystem.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -14,6 +15,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Getter
 @Setter
+@ToString
 public class Plot {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +27,7 @@ public class Plot {
     private Long sizeInMeters;
 
     @OneToMany(mappedBy = "plot", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private Set<TimeSlots> timeSlots;
 
     @Override

@@ -15,8 +15,23 @@ public class TimeSlotsService {
 
 
     public TimeSlots save(TimeSlots timeSlots) {
+        var timeslot = repository.findById(timeSlots.getId());
+        if (timeslot.isPresent()) {
+            var timeSlotEntity = new TimeSlots();
+            timeSlotEntity.setId(timeSlots.getId());
+            timeSlotEntity.setDayValue(timeSlots.getDayValue());
+            timeSlotEntity.setTimeValue(timeSlots.getTimeValue());
+            timeSlotEntity.setFrequency(timeSlots.getFrequency());
+            timeSlotEntity.setCubicWaterAmount(timeSlots.getCubicWaterAmount());
+            timeSlotEntity.setSensorNumber(timeSlots.getSensorNumber());
+            timeSlotEntity.setPlot(timeSlots.getPlot());
+
+            return repository.save(timeSlots);
+        }
 
         return repository.save(timeSlots);
     }
+
+
 
 }

@@ -24,7 +24,7 @@ public class TimeSlotsDto {
     private String humanReadableTime;
 
     private Double cubicWaterAmount;
-    private StatusType status = StatusType.PENDING;
+    private StatusType status;
     private FrequencyType frequency;
 
     @JsonIgnore

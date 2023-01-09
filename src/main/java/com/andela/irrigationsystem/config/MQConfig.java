@@ -25,7 +25,6 @@ public class MQConfig {
     public Queue emailQueue() {
         return new Queue(config.getEmailQueue());
     }
-
     @Bean
     public TopicExchange exchange() {
         return new TopicExchange(config.getExchange());
@@ -38,6 +37,7 @@ public class MQConfig {
                 .to(exchange())
                 .with(config.getEmailKey());
     }
+
 
     @Bean
     public MessageConverter messageConverter() {

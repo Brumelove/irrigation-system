@@ -17,7 +17,11 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @RequiredArgsConstructor
 public class EmailEventListener {
-
+    /**
+     * sending Email notification
+     *
+     * @param emailEvent
+     */
     @RabbitListener(queues = "${rabbitmq.queue.email.name}")
     public static void handleEmailNotification(EmailEvent emailEvent) {
         //At this point a message sending service is called to deliver message to recipient

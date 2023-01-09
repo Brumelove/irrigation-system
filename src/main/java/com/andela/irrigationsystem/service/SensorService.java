@@ -1,33 +1,32 @@
 package com.andela.irrigationsystem.service;
 
 import com.andela.irrigationsystem.config.RabbitMQPropConfig;
+import com.andela.irrigationsystem.config.RetryConfig;
 import com.andela.irrigationsystem.dto.EmailDto;
 import com.andela.irrigationsystem.dto.SensorDto;
 import com.andela.irrigationsystem.dto.TimeSlotsDto;
 import com.andela.irrigationsystem.enumerations.FrequencyType;
-import com.andela.irrigationsystem.exception.BadRequestException;
+import com.andela.irrigationsystem.enumerations.StatusType;
 import com.andela.irrigationsystem.exception.ElementNotFoundException;
+import com.andela.irrigationsystem.exception.ElementWithSameIDAlreadyExistsException;
 import com.andela.irrigationsystem.mapper.IrrigationMapper;
 import com.andela.irrigationsystem.repositories.SensorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Recover;
-import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * @author Brume
@@ -36,50 +35,82 @@ import java.util.concurrent.ScheduledFuture;
 @Slf4j
 @RequiredArgsConstructor
 public class SensorService {
+    private final RetryConfig retryConfig;
     private final RabbitTemplate template;
     private final RabbitMQPropConfig config;
+    @Autowired
+    @Lazy
+    public TimeSlotsService timeSlotsService;
+    int counter = 0;
     private final SensorRepository repository;
     private final IrrigationMapper mapper;
     private final TaskScheduler taskScheduler;
 
-    public boolean triggerSensor(String sensorNumber, Long plotId, TimeSlotsDto timeSlotsDto) {
-
+    /**
+     * Used to schedule the time for a plot of land for irrigation
+     *
+     * @param plotId
+     * @param sensorNumber
+     * @param timeSlotsDto
+     */
+    public void scheduleATask(Long plotId, String sensorNumber, TimeSlotsDto timeSlotsDto) {
         var cronExpression = convertToCronExpression(timeSlotsDto.getFrequency(), timeSlotsDto.getTimeValue(), timeSlotsDto.getDayValue());
-        return scheduleATask(cronExpression, plotId, sensorNumber, timeSlotsDto.getCubicWaterAmount()).isDone();
-    }
 
-    private ScheduledFuture<?> scheduleATask(String cronExpression, Long plotId, String sensorNumber, Double cubicAmountOfWater) {
         //set's task
-        return taskScheduler.schedule(irrigateLand(sensorNumber, plotId, cubicAmountOfWater),
+        taskScheduler.schedule(irrigateLand(sensorNumber, plotId, timeSlotsDto),
                 //trigger the cronjob
                 new CronTrigger(cronExpression, TimeZone.getTimeZone(ZoneId.of("UTC"))));
     }
 
-    private Runnable irrigateLand(String sensorNumber, Long plotId, Double cubicAmountOfWater) {
+    /**
+     * method called on the time duration to irrigate land
+     *
+     * @param sensorNumber
+     * @param plotId
+     * @param timeSlots
+     * @return Runnable
+     */
+    private Runnable irrigateLand(String sensorNumber, Long plotId, TimeSlotsDto timeSlots) {
         return () -> {
             log.info("LAND IRRIGATION STARTED FOR PLOT " + plotId);
 
-            ResponseEntity<String> pong = null;
-            try {
-                pong = pingSensor(sensorNumber, plotId, cubicAmountOfWater);
-            } catch (Exception e) {
-                sendMessage(e);
-                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Sensor unreachable");
+            RetryTemplate template = RetryTemplate.builder()
+                    .maxAttempts(2)
+                    .fixedBackoff(1000)
+                    .retryOn(Exception.class)
+                    .build();
+
+            ResponseEntity<String> ping = null;
+
+            ping = pingSensor(sensorNumber, plotId, timeSlots.getCubicWaterAmount());
+
+            if (ping != null && ping.getStatusCode().is2xxSuccessful()) {
+                timeSlots.setStatus(StatusType.SUCCESS);
+            } else {
+                timeSlots.setStatus(StatusType.UNSUCCESSFUL);
             }
             log.info("LAND IRRIGATION COMPLETED FOR PLOT " + plotId);
-
+            timeSlotsService.save(mapper.mapTimeSlotsDtoToEntity(timeSlots));
         };
     }
 
+    /**
+     * converts human readable expression to cron expression for the scheduler
+     *
+     * @param frequencyType
+     * @param timeValue
+     * @param day
+     * @return String
+     */
     public String convertToCronExpression(FrequencyType frequencyType, int timeValue, int day) {
         String cronExpression = switch (frequencyType) {
             case HOURLY -> "0 0 " + timeValue + " * * *";
             case MINUTE -> "0 */" + timeValue + " * ? * *";
-            case DAILY -> "0 0 0" + timeValue + "* *";
-            case WEEKLY -> "0 0 " + timeValue + "* * " + day;
-            case BIWEEKLY -> "0 0 " + timeValue + "* * " + day;
-            case MONTHLY -> "0 0 0 " + timeValue + "* *";
-            case YEARLY -> "0 0 0 " + timeValue + " " + day + " *";
+            case DAILY -> "0 0 0 " + timeValue + " * *";
+            case WEEKLY -> "0 0 " + timeValue + " * * " + day;
+            case BIWEEKLY -> "0 0 " + timeValue / 2 + " * * " + day;
+            case MONTHLY -> "0 0 " + timeValue + " " + day + " * *";
+            case YEARLY -> "0 0 " + timeValue + " " + day + " * *";
             default -> "0 0 0 * * *";
         };
         log.info("CRON EXPRESSION ::: {} {}", frequencyType, cronExpression);
@@ -87,14 +118,42 @@ public class SensorService {
     }
 
     /**
-     * This method processes message delivery by:
-     * checking if message is a spam
-     * sending message to charging service irrespective of spam status
-     * rejecting message when its a spam
-     * sending message when to recipient when not a spam
+     * method sends a http post request to the sensor address
+     * on failure it retries 2 times and on recovery it sends an alert to the neccessary receipient.
+     *
+     * @param sensorNumber
+     * @param plotId
+     * @param cubicWater
+     * @return ResponseEntity<String>
      */
-    @Recover()
-    private void sendMessage(Exception e) {
+    public ResponseEntity<String> pingSensor(String sensorNumber, Long plotId, Double cubicWater) {
+        try {
+            RetryTemplate template = RetryTemplate.builder()
+                    .maxAttempts(2)
+                    .fixedBackoff(1000)
+                    .retryOn(Exception.class)
+                    .build();
+            counter++;
+            template.execute(arg0 -> {
+                var sensor = getSensorAddress(sensorNumber, plotId);
+
+                return WebClient.create().post()
+                        .uri(sensor + "/" + cubicWater)
+                        .retrieve().toEntity(String.class).block();
+            });
+
+        } catch (ElementNotFoundException | NullPointerException e) {
+            sendMessage();
+            log.error(e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * This method processes message delivery by:
+     * ]     * sending message to a queue if error retrial by the calling method reaches its max attempt
+     */
+    public void sendMessage() {
         String messageId = UUID.randomUUID().toString() +
                 LocalDateTime.now().getNano();
 
@@ -108,27 +167,32 @@ public class SensorService {
         template.convertAndSend(config.getExchange(), config.getEmailKey(), emailDto);
     }
 
-    @Retryable(value = Exception.class, maxAttempts = 2, backoff = @Backoff(delay = 10, multiplier = 2))
-    private ResponseEntity<String> pingSensor(String sensorNumber, Long plotId, Double cubicWater) {
-        var sensor = getSensorAddress(sensorNumber, plotId);
-
-        return WebClient.create().post()
-                .uri(sensor + "/" + cubicWater)
-                .retrieve().toEntity(String.class).block();
-    }
-
+    /**
+     * Gets Sensor address Url
+     *
+     * @param sensorNumber
+     * @param plotId
+     * @return String
+     */
     public String getSensorAddress(String sensorNumber, Long plotId) {
         return
                 repository.getSensorEndpointBySensorNumberAndPlotId(sensorNumber, plotId)
                         .orElseThrow(() -> new ElementNotFoundException("Sensor Address is not be found"));
     }
 
+    /**
+     * Method to create a sensor, as part of land configuration
+     *
+     * @param sensorDto
+     * @return SensorDto
+     * @throws ElementWithSameIDAlreadyExistsException
+     */
     public SensorDto createSensor(SensorDto sensorDto) {
         try {
             var sensor = mapper.mapSensorDtoToEntity(sensorDto);
             return mapper.mapSensorEntityToDto(repository.save(sensor));
         } catch (Exception e) {
-            throw new BadRequestException(sensorDto.getSensorNumber() + " is not unique");
+            throw new ElementWithSameIDAlreadyExistsException(sensorDto.getSensorNumber() + " is not unique");
         }
     }
 

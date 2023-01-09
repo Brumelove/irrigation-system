@@ -3,6 +3,7 @@ server:
   servlet:
     context-path: /irrigation-system
 
+
 spring:
   datasource:
     url: jdbc:h2:~/recruitment
@@ -14,7 +15,7 @@ spring:
   jpa:
     open-in-view: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -26,6 +27,15 @@ spring:
       path: /h2-ui
   main:
     allow-bean-definition-overriding: true
+#  rabbitmq:
+#    listener:
+#      simple:
+#        retry:
+#          enabled: true
+#          initial-interval: 5000
+#          max-attempts: 2
+#          max-interval: 1000
+#          multiplier: 2
 app:
   name: irrigation-system
   version: 1
@@ -67,3 +77,10 @@ camunda:
 #      flightSearch:
 #        max-attempts: 5
 #        waitDuration: 3s
+
+
+logging:
+  level:
+    org:
+      springframework:
+        retry: DEBUG
