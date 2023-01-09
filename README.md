@@ -2,14 +2,17 @@
 
 Build project by running mvn clean install.
 
-Swagger Link : http://localhost:8092/irrigation-system/swagger-ui/index.html#/
-Cammunda Link: http://localhost:8092/irrigation-system/camunda/app/cockpit/default/#/process-definition/
+Swagger Link : http://localhost:8092/irrigation-system/swagger-ui/index.html#/    
+Cammunda Link: http://localhost:8092/irrigation-system/camunda/app/cockpit/default/#/process-definition/    
 Database Link: http://localhost:8092/irrigation-system/h2-ui/
+
 ![](/home/brume/Desktop/overview.png)
+
 The Image above shows an overview of the automatic irrigation system.Each plot of land has a sensor attached to it. A
 farm land can have multiple plots of land. Each plot of land has a time slots for irrigation.
 
 ![](/home/brume/Desktop/high level.png)
+
 The Image above shows a high level design of the architecture. A plot of land has its size in meters, the crop name,
 type(important for prediction), location and so forth.
 For the timeslots we need to know the amount of water needed for irrigation as well as the time, frequency, day it needs
@@ -26,6 +29,7 @@ In a system with a high write, I would consider making use of a Quartz scheduler
 A sample TimeSLots.Json is found in the resources directory.
 
 ![img.png](img.png)
+
 Image above shows a rough workflow design of the process. Due to time constraint I am unable to fully implement the
 service tasks.
 
