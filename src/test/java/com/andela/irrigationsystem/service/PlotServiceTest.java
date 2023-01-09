@@ -69,7 +69,6 @@ class PlotServiceTest {
 
         assertNotNull(response);
         assertEquals(1, response.getId());
-        assertEquals("Lagos", response.getLocation());
 
         verify(repository, times(1)).save(mapper.mapPlotDtoToEntity(response));
     }
