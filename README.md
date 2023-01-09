@@ -36,3 +36,8 @@ Image shows retry injected 2 times and on recover sends a notification to a mess
 listener picks it up and send an email to the correspondence. Spring Retry template was used for retrying erros. The max
 attempt is 2 with 1 second in between those attempts. I could also make use of rabbitMQ retry listener if i am concerned
 about the expensiveness of calling the retries on the same thread as the scheduler.
+
+Things I can do to improve the system;
+Not allow Sensor to irrigate on rainy days(depending on the rain-to-water ratio)
+Use a quartz scheduler (catering for different threads)
+Use Resilience4j or Spring Retryable and Recover
