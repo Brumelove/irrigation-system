@@ -73,11 +73,11 @@ public class PlotService {
     public TimeSlotsDto configurePlotOfLand(Long plotId, TimeSlotsDto timeSlots) {
         var plot = getById(plotId);
         if (plot != null) {
-            var entity = mapper.mapTimeSlotsDtoToEntity(timeSlots);
-            entity.setPlot(plot);
+            timeSlots.setPlot(plot);
 
-            triggerSensor(plotId, timeSlots);
-            return mapper.mapTimeSlotsEntityToDto(timeSlotsService.save(entity));
+            var response = timeSlotsService.save(timeSlots);
+            triggerSensor(plotId, response);
+            return response;
         } else throw new ElementNotFoundException("plot id does not exist");
     }
 
@@ -94,7 +94,7 @@ public class PlotService {
         } catch (InterruptedException e) {
             log.error(e.getMessage());
         }
-        sensorService.scheduleATask(plotId, timeSlots.getSensorNumber(),timeSlots);
+        sensorService.scheduleATask(plotId, timeSlots.getSensorNumber(), timeSlots);
     }
 
 }

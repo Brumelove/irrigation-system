@@ -49,7 +49,7 @@ public class RestExceptionHandler {
     @ExceptionHandler({ConstraintViolationException.class})
     public ResponseEntity<Object> handleConstraintException(ConstraintViolationException exception, WebRequest request) {
 
-        Map<String, Object> errorAttributes = constructErrorResponse(HttpStatus.NOT_FOUND, request, exception.getMessage());
+        Map<String, Object> errorAttributes = constructErrorResponse(HttpStatus.BAD_REQUEST, request, exception.getMessage());
 
         return ResponseEntity.badRequest().body(errorAttributes);
     }

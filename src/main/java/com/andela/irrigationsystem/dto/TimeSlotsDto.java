@@ -32,7 +32,6 @@ public class TimeSlotsDto {
     @NotNull(message = "cubicWaterAmount cannot be empty")
     private Double cubicWaterAmount;
     private StatusType status;
-    @NotBlank(message = "frequency cannot be empty")
     private FrequencyType frequency;
 
     @JsonIgnore

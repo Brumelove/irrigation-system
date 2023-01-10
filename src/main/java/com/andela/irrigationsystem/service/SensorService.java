@@ -36,6 +36,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SensorService implements SensorInterface {
     private final RabbitTemplate template;
+    private final RetryTemplate retryTemplate;
     private final RabbitMQPropConfig config;
     @Autowired
     @Lazy
@@ -62,6 +63,7 @@ public class SensorService implements SensorInterface {
 
     /**
      * method called on the time duration to irrigate land
+     * on failure to pinging the sensor it retries 2 times and on recovery it sends an alert to the neccessary receipient.
      *
      * @param sensorNumber
      * @param plotId
@@ -72,17 +74,28 @@ public class SensorService implements SensorInterface {
         return () -> {
             log.info("LAND IRRIGATION STARTED FOR PLOT " + plotId);
 
-            ResponseEntity<String> ping;
+            try {
 
-            ping = integrateSensor(sensorNumber, plotId, timeSlots.getCubicWaterAmount());
 
-            if (ping != null && ping.getStatusCode().is2xxSuccessful()) {
+                RetryTemplate template = RetryTemplate.builder()
+                        .maxAttempts(2)
+                        .fixedBackoff(1000)
+                        .retryOn(Exception.class)
+                        .build();
+                template.execute(arg0 -> {
+                    var sensorAddress = getSensorAddress(sensorNumber, plotId);
+                    return integrateSensor(sensorAddress, timeSlots.getCubicWaterAmount());
+                });
                 timeSlots.setStatus(StatusType.SUCCESS);
-            } else {
+                log.info("LAND IRRIGATION COMPLETED FOR PLOT " + plotId);
+            } catch (Exception e) {
+                log.info("LAND IRRIGATION FAILED FOR PLOT " + plotId);
+
                 timeSlots.setStatus(StatusType.UNSUCCESSFUL);
+                sendMessage();
+                log.error(e.getMessage());
             }
-            log.info("LAND IRRIGATION COMPLETED FOR PLOT " + plotId);
-            timeSlotsService.save(mapper.mapTimeSlotsDtoToEntity(timeSlots));
+            timeSlotsService.update(timeSlots);
         };
     }
 
@@ -111,34 +124,16 @@ public class SensorService implements SensorInterface {
 
     /**
      * method sends a http post request to the sensor address
-     * on failure it retries 2 times and on recovery it sends an alert to the neccessary receipient.
      *
-     * @param sensorNumber
-     * @param plotId
+     * @param sensorEndpoint
      * @param cubicWater
      * @return ResponseEntity<String>
      */
     @Override
-    public ResponseEntity<String> integrateSensor(String sensorNumber, Long plotId, Double cubicWater) {
-        try {
-            RetryTemplate template = RetryTemplate.builder()
-                    .maxAttempts(2)
-                    .fixedBackoff(1000)
-                    .retryOn(Exception.class)
-                    .build();
-            template.execute(arg0 -> {
-                var sensor = getSensorAddress(sensorNumber, plotId);
-
-                return WebClient.create().post()
-                        .uri(sensor + "/" + cubicWater)
-                        .retrieve().bodyToMono(String.class);
-            });
-
-        } catch (Exception e) {
-            sendMessage();
-            log.error(e.getMessage());
-        }
-        return null;
+    public ResponseEntity<String> integrateSensor(String sensorEndpoint, Double cubicWater) {
+        return WebClient.create().post()
+                .uri(sensorEndpoint + "/" + cubicWater)
+                .retrieve().toEntity(String.class).block();
     }
 
     /**

@@ -25,7 +25,7 @@ public class EmailEventListener {
     @RabbitListener(queues = "${rabbitmq.queue.email.name}")
     public static void handleEmailNotification(EmailEvent emailEvent) {
         //At this point a message sending service is called to deliver message to recipient
-        log.info("---> Message::[{}] with referenceNumber::{} from source::{} has been sent to destination::{} successfully",
+        log.info("---> Email body Message::[{}] with referenceNumber::{} from source::{} has been sent to destination::{} successfully",
                 emailEvent.message(), emailEvent.referenceNumber(), emailEvent.sourceAddress(),
                 emailEvent.destinationAddress());
     }

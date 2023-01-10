@@ -105,10 +105,8 @@ class PlotServiceTest {
         var timeSlots = ObjectBuilder.timeSlot(FrequencyType.HOURLY, 2, 0);
 
         when(repository.findById(1L)).thenReturn(Optional.of(plot));
-        when(mapper.mapTimeSlotsDtoToEntity(timeSlotsDto)).thenReturn(timeSlots);
 
-        when(mapper.mapTimeSlotsEntityToDto(timeSlots)).thenReturn(timeSlotsDto);
-        when(timeSlotsService.save(timeSlots)).thenReturn(timeSlots);
+        when(timeSlotsService.save(timeSlotsDto)).thenReturn(timeSlotsDto);
         var response = plotService.configurePlotOfLand(1L, timeSlotsDto);
 
         assertNotNull(plot);

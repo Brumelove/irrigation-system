@@ -1,6 +1,8 @@
 package com.andela.irrigationsystem.service;
 
-import com.andela.irrigationsystem.model.TimeSlots;
+import com.andela.irrigationsystem.dto.TimeSlotsDto;
+import com.andela.irrigationsystem.exception.ElementNotFoundException;
+import com.andela.irrigationsystem.mapper.IrrigationMapper;
 import com.andela.irrigationsystem.repositories.TimeSlotsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,26 +14,35 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TimeSlotsService {
     private final TimeSlotsRepository repository;
+    private final IrrigationMapper mapper;
 
 
-    public TimeSlots save(TimeSlots timeSlots) {
-        var timeslot = repository.findById(timeSlots.getId());
-        if (timeslot.isPresent()) {
-            var timeSlotEntity = new TimeSlots();
-            timeSlotEntity.setId(timeSlots.getId());
-            timeSlotEntity.setDayValue(timeSlots.getDayValue());
-            timeSlotEntity.setTimeValue(timeSlots.getTimeValue());
-            timeSlotEntity.setFrequency(timeSlots.getFrequency());
-            timeSlotEntity.setCubicWaterAmount(timeSlots.getCubicWaterAmount());
-            timeSlotEntity.setSensorNumber(timeSlots.getSensorNumber());
-            timeSlotEntity.setPlot(timeSlots.getPlot());
+    public TimeSlotsDto save(TimeSlotsDto timeSlotsDto) {
+        var timeSlotsEntity = mapper.mapTimeSlotsDtoToEntity(timeSlotsDto);
 
-            return repository.save(timeSlots);
-        }
 
-        return repository.save(timeSlots);
+        return mapper.mapTimeSlotsEntityToDto(repository.save(timeSlotsEntity));
+
+
     }
 
+    public TimeSlotsDto update(TimeSlotsDto timeSlots) {
+        System.out.println(timeSlots.getId());
+        var timeslot = repository.findById(timeSlots.getId());
+        if (timeslot.isPresent()) {
+            TimeSlotsDto timeSlotsDto = new TimeSlotsDto();
+            timeSlotsDto.setId(timeSlots.getId());
+            timeSlotsDto.setDayValue(timeSlots.getDayValue());
+            timeSlotsDto.setTimeValue(timeSlots.getTimeValue());
+            timeSlotsDto.setFrequency(timeSlots.getFrequency());
+            timeSlotsDto.setStatus(timeSlots.getStatus());
+            timeSlotsDto.setCubicWaterAmount(timeSlots.getCubicWaterAmount());
+            timeSlotsDto.setSensorNumber(timeSlots.getSensorNumber());
+            timeSlotsDto.setPlot(timeSlots.getPlot());
+
+            return save(timeSlotsDto);
+        } else throw new ElementNotFoundException("id does not exist");
+    }
 
 
 }

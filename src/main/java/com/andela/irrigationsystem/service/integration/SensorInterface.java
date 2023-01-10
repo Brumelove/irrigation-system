@@ -6,5 +6,5 @@ import org.springframework.http.ResponseEntity;
  * @author Brume
  **/
 public interface SensorInterface {
-    ResponseEntity<String> integrateSensor(String sensorNumber, Long plotId, Double cubicWater);
+    ResponseEntity<String> integrateSensor(String sensorEndpoint, Double cubicWater);
 }
