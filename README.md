@@ -41,3 +41,4 @@ Things I can do to improve the system;
 Not allow Sensor to irrigate on rainy days(depending on the rain-to-water ratio)
 Use a quartz scheduler (catering for different threads)
 Use Resilience4j or Spring Retryable and Recover
+Do a ping to the sensor before sending a http call to the device, that way if the device doesn't respond we can tell if the sensor address exists and can accept requests. 
